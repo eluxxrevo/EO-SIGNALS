@@ -1,0 +1,304 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EO Signals</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #111;
+      color: #fff;
+    }
+    .container {
+      padding: 1rem;
+    }
+    .signal-card {
+      background: #1e1e1e;
+      border-left: 4px solid gold;
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .signal-card.locked {
+      opacity: 0.4;
+      position: relative;
+    }
+    .locked::after {
+      content: "🔒 Locked - $1 to Unlock";
+      color: gold;
+      position: absolute;
+      top: 40%;
+      left: 30%;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .btn {
+      background: gold;
+      color: #000;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: bold;
+      margin-top: 1rem;
+      display: inline-block;
+    }
+    .nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #222;
+      display: flex;
+      justify-content: space-around;
+      padding: 0.6rem 0;
+      border-top: 2px solid gold;
+    }
+    .nav a {
+      color: gold;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .hidden { display: none; }
+    input, button {
+      padding: 10px;
+      border-radius: 5px;
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+    .page { display: none; }
+    .page.active { display: block; }
+    .header {
+      text-align: center;
+      font-size: 24px;
+      color: gold;
+      margin: 1rem 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="auth" class="container page active">
+    <div class="header">🔐 Login to EO Signals</div>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <button onclick="register()">Register</button>
+  </div>
+
+  <div id="home" class="container page">
+    <div class="header">📊 Today's Signals</div>
+    <div id="signalsList"></div>
+  </div>
+
+  <div id="subscribe" class="container page">
+    <div class="header">💳 Subscribe</div>
+    <p>Get full access for 7 days to all signals.</p>
+    <a class="btn" href="https://paystack.com/buy/eo-signals-zstlfg">Subscribe for $10</a>
+  </div>
+
+  <div id="history" class="container page">
+    <div class="header">📅 Signal History</div>
+    <p>Coming soon in Part 2</p>
+  </div>
+
+  <div id="support" class="container page">
+    <div class="header">📞 Support</div>
+    <a href="https://wa.me/234XXXXXXXXXX" class="btn">Contact on WhatsApp</a>
+  </div>
+
+  <div class="nav">
+    <a href="#" onclick="nav('home')">Home</a>
+    <a href="#" onclick="nav('subscribe')">Subscribe</a>
+    <a href="#" onclick="nav('history')">History</a>
+    <a href="#" onclick="nav('support')">Support</a>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyC_48KAtbyUk_658IKKPVVkdKF32F4xDHs",
+      authDomain: "eo-signals.firebaseapp.com",
+      projectId: "eo-signals",
+      appId: "1:1045274402025:web:a5c4913b9f6e390162e478"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    function login() {
+      const email = document.getElementById("email").value;
+      const pass = document.getElementById("password").value;
+      auth.signInWithEmailAndPassword(email, pass)
+        .then(() => showPage("home"))
+        .catch(err => alert(err.message));
+    }
+
+    function register() {
+      const email = document.getElementById("email").value;
+      const pass = document.getElementById("password").value;
+      auth.createUserWithEmailAndPassword(email, pass)
+        .then(() => showPage("home"))
+        .catch(err => alert(err.message));
+    }
+
+    function showPage(id) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function nav(page) {
+      showPage(page);
+    }
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        showPage('home');
+        loadSignals();
+      } else {
+        showPage('auth');
+      }
+    });
+
+    function loadSignals() {
+      const list = document.getElementById("signalsList");
+      list.innerHTML = '';
+      const mockSignals = [
+        { id: "eurusd_20250711_1", asset: "EUR/USD", action: "Buy", entry: "1.0830", tp: "1.0890", sl: "1.0800", duration: "3 minutes" },
+        { id: "gold_20250711_2", asset: "Gold", action: "Sell", entry: "2330", tp: "2315", sl: "2342", duration: "3 minutes" },
+        { id: "facebook_20250711_3", asset: "Facebook", action: "Buy", entry: "$350", tp: "$358", sl: "$346", duration: "3 minutes" }
+      ];
+
+      mockSignals.forEach(signal => {
+        const card = document.createElement('div');
+        card.className = 'signal-card locked';
+        card.innerHTML = `
+          <strong>${signal.asset} – ${signal.action}</strong><br>
+          Entry: ${signal.entry} | TP: ${signal.tp} | SL: ${signal.sl}<br>
+          ⏱️ Duration: ${signal.duration}<br>
+          <button class="btn" onclick="unlockSignal('${signal.id}')">Unlock for $1</button>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function unlockSignal(id) {
+      window.location.href = "https://paystack.com/buy/eo-signals-zstlfg"; // For now, same payment link
+    }
+  </script>
+  <!-- Admin Panel -->
+  <div id="adminPanel" class="container page">
+    <div class="header">🛠️ Admin – Post Signal</div>
+    <input id="asset" placeholder="Asset (e.g., EUR/USD)">
+    <input id="action" placeholder="Action (Buy/Sell)">
+    <input id="entry" placeholder="Entry Price">
+    <input id="tp" placeholder="Take Profit">
+    <input id="sl" placeholder="Stop Loss">
+    <button onclick="postSignal()">Post Signal</button>
+  </div>
+
+  <script>
+    const db = firebase.firestore();
+    const adminEmail = "admin@eosignals.com"; // Replace with your admin login email
+
+    async function postSignal() {
+      const asset = document.getElementById("asset").value;
+      const action = document.getElementById("action").value;
+      const entry = document.getElementById("entry").value;
+      const tp = document.getElementById("tp").value;
+      const sl = document.getElementById("sl").value;
+      const id = `${asset.toLowerCase().replace(/[^a-z]/g, '')}_${Date.now()}`;
+
+      await db.collection("signals").doc(id).set({
+        id,
+        asset,
+        action,
+        entry,
+        tp,
+        sl,
+        duration: "3 minutes",
+        date: new Date().toISOString().split("T")[0]
+      });
+
+      alert("✅ Signal posted!");
+    }
+
+    async function loadSignals() {
+      const user = auth.currentUser;
+      const uid = user.uid;
+      const userDoc = await db.collection("users").doc(uid).get();
+      const userData = userDoc.exists ? userDoc.data() : {};
+      const unlocked = userData.unlockedSignals || [];
+      const expiry = userData.subscription_expiry || "";
+
+      const now = new Date();
+      const isSubscribed = expiry && new Date(expiry) > now;
+
+      const list = document.getElementById("signalsList");
+      list.innerHTML = '';
+
+      const snapshot = await db.collection("signals").orderBy("date", "desc").get();
+      snapshot.forEach(doc => {
+        const signal = doc.data();
+        const hasAccess = isSubscribed || unlocked.includes(signal.id);
+
+        const card = document.createElement('div');
+        card.className = 'signal-card' + (hasAccess ? '' : ' locked');
+        card.innerHTML = `
+          <strong>${signal.asset} – ${signal.action}</strong><br>
+          Entry: ${signal.entry} | TP: ${signal.tp} | SL: ${signal.sl}<br>
+          ⏱️ Duration: ${signal.duration}<br>
+          ${!hasAccess ? `<button class="btn" onclick="unlockSignal('${signal.id}')">Unlock for $1</button>` : ''}
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    async function unlockSignal(signalId) {
+      alert("Redirecting to Paystack payment...");
+      // Redirect user to Paystack or log a dummy unlock
+      window.location.href = "https://paystack.com/buy/eo-signals-zstlfg";
+
+      // You would normally wait for webhook or payment success
+      const uid = auth.currentUser.uid;
+      const ref = db.collection("users").doc(uid);
+      await ref.set({
+        unlockedSignals: firebase.firestore.FieldValue.arrayUnion(signalId)
+      }, { merge: true });
+
+      alert("✅ Signal unlocked (dummy mode)");
+      loadSignals();
+    }
+
+    auth.onAuthStateChanged(async user => {
+      if (user) {
+        if (user.email === adminEmail) {
+          // Show admin panel
+          const navBar = document.querySelector(".nav");
+          const adminLink = document.createElement("a");
+          adminLink.innerText = "Admin";
+          adminLink.href = "#";
+          adminLink.onclick = () => showPage("adminPanel");
+          navBar.appendChild(adminLink);
+        }
+
+        const ref = db.collection("users").doc(user.uid);
+        const doc = await ref.get();
+        if (!doc.exists) {
+          // New user — create base record
+          await ref.set({
+            subscription_expiry: "",
+            unlockedSignals: []
+          });
+        }
+
+        showPage("home");
+        loadSignals();
+      }
+    });
+  </script>
+</body>
+</html>
