@@ -2,9 +2,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>EO Signals</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>EO Signals - Trade Smart</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -15,111 +15,126 @@
       background-color: #111;
       color: #fff;
     }
-    .container {
-      padding: 1rem;
-    }
-    .signal-card {
-      background: #1e1e1e;
-      border-left: 4px solid gold;
-      border-radius: 10px;
-      padding: 1rem;
-      margin-bottom: 1rem;
-    }
-    .signal-card.locked {
-      opacity: 0.4;
-      position: relative;
-    }
-    .locked::after {
-      content: "🔒 Locked - $1 to Unlock";
+    .page { display: none; padding: 1rem; }
+    .active { display: block; }
+    .loader {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #000;
       color: gold;
-      position: absolute;
-      top: 40%;
-      left: 30%;
-      font-weight: bold;
-      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      z-index: 9999;
     }
     .btn {
       background: gold;
-      color: #000;
+      color: black;
+      padding: 10px;
       border: none;
-      padding: 10px 16px;
       border-radius: 8px;
+      margin-top: 10px;
       font-weight: bold;
-      margin-top: 1rem;
-      display: inline-block;
+      cursor: pointer;
+    }
+    .signal-card {
+      background: #1a1a1a;
+      border-left: 4px solid gold;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 10px;
+      position: relative;
+    }
+    .signal-card.locked {
+      opacity: 0.4;
+    }
+    .signal-card.locked::after {
+      content: "🔒 Locked - 1 EO Coin";
+      position: absolute;
+      top: 40%;
+      left: 20%;
+      color: gold;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 6px;
+      border: none;
     }
     .nav {
       position: fixed;
       bottom: 0;
-      left: 0;
       width: 100%;
       background: #222;
       display: flex;
       justify-content: space-around;
-      padding: 0.6rem 0;
       border-top: 2px solid gold;
+      padding: 0.5rem 0;
     }
     .nav a {
       color: gold;
-      text-decoration: none;
       font-weight: bold;
-      font-size: 14px;
+      text-decoration: none;
     }
-    .hidden { display: none; }
-    input, button {
-      padding: 10px;
-      border-radius: 5px;
-      width: 100%;
-      margin-bottom: 1rem;
-    }
-    .page { display: none; }
-    .page.active { display: block; }
     .header {
-      text-align: center;
       font-size: 24px;
+      margin-bottom: 1rem;
       color: gold;
-      margin: 1rem 0;
     }
   </style>
 </head>
 <body>
-  <div id="auth" class="container page active">
+  <div id="loader" class="loader">Loading EO Signals...</div>
+
+  <!-- Auth Page -->
+  <div id="auth" class="page active">
     <div class="header">🔐 Login to EO Signals</div>
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="login()">Login</button>
-    <button onclick="register()">Register</button>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <button class="btn" onclick="login()">Login</button>
+    <button class="btn" onclick="register()">Register</button>
   </div>
 
-  <div id="home" class="container page">
-    <div class="header">📊 Today's Signals</div>
+  <!-- Home Page -->
+  <div id="home" class="page">
+    <div class="header">📊 Signals</div>
+    <input id="searchBar" placeholder="Search by asset (e.g., Gold)" oninput="filterSignals()" />
     <div id="signalsList"></div>
   </div>
 
-  <div id="subscribe" class="container page">
-    <div class="header">💳 Subscribe</div>
-    <p>Get full access for 7 days to all signals.</p>
-    <a class="btn" href="https://paystack.com/buy/eo-signals-zstlfg">Subscribe for $10</a>
+  <!-- Profile Page -->
+  <div id="profile" class="page">
+    <div class="header">👤 My Account</div>
+    <p><strong>Email:</strong> <span id="userEmail"></span></p>
+    <p><strong>EO Coin Balance:</strong> <span id="walletBalance">0</span> 🪙</p>
+    <p><strong>Subscription:</strong> <span id="subExpiry">None</span></p>
+    <button class="btn" onclick="logout()">Logout</button>
   </div>
 
-  <div id="history" class="container page">
-    <div class="header">📅 Signal History</div>
-    <p>Coming soon in Part 2</p>
+  <!-- Subscribe Page -->
+  <div id="subscribe" class="page">
+    <div class="header">💳 Deposit</div>
+    <p>💰 Buy EO Coins to unlock signals (1 signal = 1 EO Coin).</p>
+    <a class="btn" href="https://paystack.com/buy/eo-signals-zstlfg">Deposit Now</a>
+    <p style="color:red; font-size:13px;">❗ No refunds after payment</p>
   </div>
 
-  <div id="support" class="container page">
-    <div class="header">📞 Support</div>
-    <a href="https://wa.me/234XXXXXXXXXX" class="btn">Contact on WhatsApp</a>
-  </div>
-
+  <!-- Navigation -->
   <div class="nav">
     <a href="#" onclick="nav('home')">Home</a>
-    <a href="#" onclick="nav('subscribe')">Subscribe</a>
-    <a href="#" onclick="nav('history')">History</a>
-    <a href="#" onclick="nav('support')">Support</a>
+    <a href="#" onclick="nav('subscribe')">Deposit</a>
+    <a href="#" onclick="nav('profile')">Account</a>
   </div>
 
   <script>
+    setTimeout(() => {
+      document.getElementById("loader").style.display = "none";
+    }, 3000);
+
     const firebaseConfig = {
       apiKey: "AIzaSyC_48KAtbyUk_658IKKPVVkdKF32F4xDHs",
       authDomain: "eo-signals.firebaseapp.com",
@@ -128,177 +143,219 @@
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-
-    function login() {
-      const email = document.getElementById("email").value;
-      const pass = document.getElementById("password").value;
-      auth.signInWithEmailAndPassword(email, pass)
-        .then(() => showPage("home"))
-        .catch(err => alert(err.message));
-    }
-
-    function register() {
-      const email = document.getElementById("email").value;
-      const pass = document.getElementById("password").value;
-      auth.createUserWithEmailAndPassword(email, pass)
-        .then(() => showPage("home"))
-        .catch(err => alert(err.message));
-    }
+    const db = firebase.firestore();
 
     function showPage(id) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.getElementById(id).classList.add('active');
     }
 
-    function nav(page) {
-      showPage(page);
+    function nav(id) {
+      showPage(id);
     }
 
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        showPage('home');
-        loadSignals();
-      } else {
-        showPage('auth');
-      }
-    });
-
-    function loadSignals() {
-      const list = document.getElementById("signalsList");
-      list.innerHTML = '';
-      const mockSignals = [
-        { id: "eurusd_20250711_1", asset: "EUR/USD", action: "Buy", entry: "1.0830", tp: "1.0890", sl: "1.0800", duration: "3 minutes" },
-        { id: "gold_20250711_2", asset: "Gold", action: "Sell", entry: "2330", tp: "2315", sl: "2342", duration: "3 minutes" },
-        { id: "facebook_20250711_3", asset: "Facebook", action: "Buy", entry: "$350", tp: "$358", sl: "$346", duration: "3 minutes" }
-      ];
-
-      mockSignals.forEach(signal => {
-        const card = document.createElement('div');
-        card.className = 'signal-card locked';
-        card.innerHTML = `
-          <strong>${signal.asset} – ${signal.action}</strong><br>
-          Entry: ${signal.entry} | TP: ${signal.tp} | SL: ${signal.sl}<br>
-          ⏱️ Duration: ${signal.duration}<br>
-          <button class="btn" onclick="unlockSignal('${signal.id}')">Unlock for $1</button>
-        `;
-        list.appendChild(card);
-      });
+    function register() {
+      const email = document.getElementById("email").value;
+      const pass = document.getElementById("password").value;
+      auth.createUserWithEmailAndPassword(email, pass)
+        .then(async cred => {
+          await db.collection("users").doc(cred.user.uid).set({
+            email,
+            wallet: 0,
+            unlockedSignals: [],
+            subscription_expiry: ""
+          });
+        })
+        .catch(e => alert("❌ " + e.message));
     }
 
-    function unlockSignal(id) {
-      window.location.href = "https://paystack.com/buy/eo-signals-zstlfg"; // For now, same payment link
-    }
-  </script>
-  <!-- Admin Panel -->
-  <div id="adminPanel" class="container page">
-    <div class="header">🛠️ Admin – Post Signal</div>
-    <input id="asset" placeholder="Asset (e.g., EUR/USD)">
-    <input id="action" placeholder="Action (Buy/Sell)">
-    <input id="entry" placeholder="Entry Price">
-    <input id="tp" placeholder="Take Profit">
-    <input id="sl" placeholder="Stop Loss">
-    <button onclick="postSignal()">Post Signal</button>
-  </div>
-
-  <script>
-    const db = firebase.firestore();
-    const adminEmail = "admin@eosignals.com"; // Replace with your admin login email
-
-    async function postSignal() {
-      const asset = document.getElementById("asset").value;
-      const action = document.getElementById("action").value;
-      const entry = document.getElementById("entry").value;
-      const tp = document.getElementById("tp").value;
-      const sl = document.getElementById("sl").value;
-      const id = `${asset.toLowerCase().replace(/[^a-z]/g, '')}_${Date.now()}`;
-
-      await db.collection("signals").doc(id).set({
-        id,
-        asset,
-        action,
-        entry,
-        tp,
-        sl,
-        duration: "3 minutes",
-        date: new Date().toISOString().split("T")[0]
-      });
-
-      alert("✅ Signal posted!");
+    function login() {
+      const email = document.getElementById("email").value;
+      const pass = document.getElementById("password").value;
+      auth.signInWithEmailAndPassword(email, pass)
+        .then(() => showPage("home"))
+        .catch(e => alert("Login failed: " + e.message));
     }
 
-    async function loadSignals() {
-      const user = auth.currentUser;
-      const uid = user.uid;
-      const userDoc = await db.collection("users").doc(uid).get();
-      const userData = userDoc.exists ? userDoc.data() : {};
-      const unlocked = userData.unlockedSignals || [];
-      const expiry = userData.subscription_expiry || "";
-
-      const now = new Date();
-      const isSubscribed = expiry && new Date(expiry) > now;
-
-      const list = document.getElementById("signalsList");
-      list.innerHTML = '';
-
-      const snapshot = await db.collection("signals").orderBy("date", "desc").get();
-      snapshot.forEach(doc => {
-        const signal = doc.data();
-        const hasAccess = isSubscribed || unlocked.includes(signal.id);
-
-        const card = document.createElement('div');
-        card.className = 'signal-card' + (hasAccess ? '' : ' locked');
-        card.innerHTML = `
-          <strong>${signal.asset} – ${signal.action}</strong><br>
-          Entry: ${signal.entry} | TP: ${signal.tp} | SL: ${signal.sl}<br>
-          ⏱️ Duration: ${signal.duration}<br>
-          ${!hasAccess ? `<button class="btn" onclick="unlockSignal('${signal.id}')">Unlock for $1</button>` : ''}
-        `;
-        list.appendChild(card);
-      });
-    }
-
-    async function unlockSignal(signalId) {
-      alert("Redirecting to Paystack payment...");
-      // Redirect user to Paystack or log a dummy unlock
-      window.location.href = "https://paystack.com/buy/eo-signals-zstlfg";
-
-      // You would normally wait for webhook or payment success
-      const uid = auth.currentUser.uid;
-      const ref = db.collection("users").doc(uid);
-      await ref.set({
-        unlockedSignals: firebase.firestore.FieldValue.arrayUnion(signalId)
-      }, { merge: true });
-
-      alert("✅ Signal unlocked (dummy mode)");
-      loadSignals();
+    function logout() {
+      auth.signOut().then(() => showPage("auth"));
     }
 
     auth.onAuthStateChanged(async user => {
       if (user) {
-        if (user.email === adminEmail) {
-          // Show admin panel
-          const navBar = document.querySelector(".nav");
-          const adminLink = document.createElement("a");
-          adminLink.innerText = "Admin";
-          adminLink.href = "#";
-          adminLink.onclick = () => showPage("adminPanel");
-          navBar.appendChild(adminLink);
-        }
-
-        const ref = db.collection("users").doc(user.uid);
-        const doc = await ref.get();
+        const doc = await db.collection("users").doc(user.uid).get();
         if (!doc.exists) {
-          // New user — create base record
-          await ref.set({
-            subscription_expiry: "",
-            unlockedSignals: []
-          });
+          alert("Not registered.");
+          auth.signOut();
+          return;
         }
-
         showPage("home");
         loadSignals();
+        loadProfile();
       }
     });
+
+    async function loadProfile() {
+      const user = auth.currentUser;
+      const doc = await db.collection("users").doc(user.uid).get();
+      const data = doc.data();
+      document.getElementById("userEmail").innerText = data.email;
+      document.getElementById("walletBalance").innerText = data.wallet;
+      document.getElementById("subExpiry").innerText = data.subscription_expiry || "None";
+    }
+
+    let allSignals = [];
+
+    async function loadSignals() {
+      const snapshot = await db.collection("signals").orderBy("date", "desc").get();
+      allSignals = snapshot.docs.map(d => d.data());
+      renderSignals();
+    }
+
+    async function renderSignals() {
+      const user = auth.currentUser;
+      const doc = await db.collection("users").doc(user.uid).get();
+      const userData = doc.data();
+      const unlocked = userData.unlockedSignals || [];
+      const isSubscribed = userData.subscription_expiry && new Date(userData.subscription_expiry) > new Date();
+
+      const list = document.getElementById("signalsList");
+      list.innerHTML = "";
+
+      allSignals.forEach(sig => {
+        const hasAccess = isSubscribed || unlocked.includes(sig.id);
+        const div = document.createElement("div");
+        div.className = "signal-card" + (hasAccess ? "" : " locked");
+        div.innerHTML = `
+          <strong>${sig.asset} – ${sig.action}</strong><br>
+          Entry: ${sig.entry} | TP: ${sig.tp} | SL: ${sig.sl}<br>
+          ⏱️ Duration: ${sig.duration}<br>
+          ${!hasAccess ? `<button class="btn" onclick="unlockSignal('${sig.id}')">Unlock for 1 EO Coin</button>` : ""}
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function filterSignals() {
+      const search = document.getElementById("searchBar").value.toLowerCase();
+      allSignals = allSignals.filter(s => s.asset.toLowerCase().includes(search));
+      renderSignals();
+    }
+
+    async function unlockSignal(id) {
+      const uid = auth.currentUser.uid;
+      const ref = db.collection("users").doc(uid);
+      const doc = await ref.get();
+      const data = doc.data();
+      if (data.wallet >= 1) {
+        await ref.update({
+          wallet: data.wallet - 1,
+          unlockedSignals: firebase.firestore.FieldValue.arrayUnion(id)
+        });
+        alert("✅ Signal unlocked!");
+        loadProfile();
+        renderSignals();
+      } else {
+        alert("❌ Not enough EO Coins. Please deposit.");
+      }
+    }
   </script>
+  
+<div id="adminPanel" class="page">
+  <div class="header">🛠️ Admin Panel</div>
+
+  <h3>Post Signal</h3>
+  <input id="asset" placeholder="Asset (e.g., EUR/USD)" />
+  <input id="action" placeholder="Action (Buy/Sell)" />
+  <input id="entry" placeholder="Entry Price" />
+  <input id="tp" placeholder="Take Profit" />
+  <input id="sl" placeholder="Stop Loss" />
+  <button class="btn" onclick="postSignal()">Post Signal</button>
+
+  <h3 style="margin-top:30px;">Transfer EO Coins</h3>
+  <input id="targetEmail" placeholder="User Email" />
+  <input id="coinAmount" type="number" placeholder="Amount to send" />
+  <button class="btn" onclick="transferCoins()">Send Coins</button>
+  <p style="margin-top:10px;">Admin Wallet Balance: <span id="adminBalance">Loading...</span> 🪙</p>
+</div>
+
+<script>
+  const adminEmail = "eluxxes@gmail.com";
+  const ADMIN_WALLET_ID = "eo";
+
+  async function postSignal() {
+    const asset = document.getElementById("asset").value;
+    const action = document.getElementById("action").value;
+    const entry = document.getElementById("entry").value;
+    const tp = document.getElementById("tp").value;
+    const sl = document.getElementById("sl").value;
+    const id = `${asset.toLowerCase().replace(/[^a-z]/g, '')}_${Date.now()}`;
+
+    await db.collection("signals").doc(id).set({
+      id,
+      asset,
+      action,
+      entry,
+      tp,
+      sl,
+      duration: "3 minutes",
+      date: new Date().toISOString().split("T")[0]
+    });
+
+    alert("✅ Signal posted!");
+  }
+
+  async function transferCoins() {
+    const email = document.getElementById("targetEmail").value;
+    const amount = parseInt(document.getElementById("coinAmount").value);
+    if (!email || !amount || amount <= 0) {
+      alert("Invalid input.");
+      return;
+    }
+
+    // Get user by email
+    const snap = await db.collection("users").where("email", "==", email).get();
+    if (snap.empty) return alert("User not found.");
+
+    const userDoc = snap.docs[0];
+    const userId = userDoc.id;
+    const userData = userDoc.data();
+
+    // Get admin balance
+    const adminRef = db.collection("adminWallet").doc(ADMIN_WALLET_ID);
+    const adminDoc = await adminRef.get();
+    let balance = adminDoc.exists ? adminDoc.data().balance : 60000000;
+
+    if (amount > balance) return alert("❌ Admin does not have enough coins.");
+
+    // Update both balances
+    await adminRef.set({ balance: balance - amount });
+    await db.collection("users").doc(userId).update({
+      wallet: (userData.wallet || 0) + amount
+    });
+
+    alert(`✅ Sent ${amount} EO Coins to ${email}`);
+    loadAdminWallet();
+  }
+
+  async function loadAdminWallet() {
+    const ref = db.collection("adminWallet").doc(ADMIN_WALLET_ID);
+    const doc = await ref.get();
+    const data = doc.exists ? doc.data() : { balance: 60000000 };
+    if (!doc.exists) await ref.set(data); // Create if missing
+    document.getElementById("adminBalance").innerText = data.balance;
+  }
+
+  auth.onAuthStateChanged(user => {
+    if (user && user.email === adminEmail) {
+      const adminTab = document.createElement("a");
+      adminTab.innerText = "Admin";
+      adminTab.href = "#";
+      adminTab.onclick = () => showPage("adminPanel");
+      document.querySelector(".nav").appendChild(adminTab);
+      loadAdminWallet();
+    }
+  });
+</script>
 </body>
 </html>
