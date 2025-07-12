@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>EO Signals - Admin & User</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>EO Signals</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -13,7 +13,7 @@
     .active { display: block; }
     .btn { background: gold; color: #000; padding: 10px; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; }
     .signal-card { background: #222; padding: 10px; margin: 10px 0; border-left: 5px solid gold; border-radius: 5px; }
-    .locked { opacity: 0.6; }
+    .locked { opacity: 0.5; }
     .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; justify-content: space-around; padding: 10px 0; border-top: 2px solid gold; }
     .nav a { color: gold; text-decoration: none; font-weight: bold; }
     .header { font-size: 24px; margin-bottom: 10px; color: gold; }
@@ -26,8 +26,8 @@
 
 <div id="auth" class="page active">
   <div class="header">Login / Register</div>
-  <input id="email" placeholder="Email" type="email">
-  <input id="password" placeholder="Password" type="password">
+  <input id="email" placeholder="Email" type="email" />
+  <input id="password" placeholder="Password" type="password" />
   <button class="btn" onclick="register()">Register</button>
   <button class="btn" onclick="login()">Login</button>
 </div>
@@ -47,16 +47,16 @@
 <div id="adminPanel" class="page">
   <div class="header">🛠️ Admin Panel</div>
   <h3>Post Signal</h3>
-  <input id="asset" placeholder="Asset (e.g., EUR/USD)">
-  <input id="action" placeholder="Action (Buy/Sell)">
-  <input id="entry" placeholder="Entry Price">
-  <input id="tp" placeholder="Take Profit">
-  <input id="sl" placeholder="Stop Loss">
+  <input id="asset" placeholder="Asset (e.g., EUR/USD)" />
+  <input id="action" placeholder="Action (Buy/Sell)" />
+  <input id="entry" placeholder="Entry Price" />
+  <input id="tp" placeholder="Take Profit" />
+  <input id="sl" placeholder="Stop Loss" />
   <button class="btn" onclick="postSignal()">Post Signal</button>
 
   <h3 style="margin-top:30px;">Transfer EO Coins</h3>
-  <input id="targetEmail" placeholder="User Email">
-  <input id="coinAmount" type="number" placeholder="Amount to send">
+  <input id="targetEmail" placeholder="User Email" />
+  <input id="coinAmount" type="number" placeholder="Amount to send" />
   <button class="btn" onclick="transferCoins()">Send Coins</button>
   <p style="margin-top:10px;">Admin Wallet Balance: <span id="adminBalance">Loading...</span> 🪙</p>
 </div>
@@ -115,6 +115,7 @@
         logout();
         return;
       }
+
       if (user.email === adminEmail) {
         const exists = [...document.querySelectorAll(".nav a")].some(e => e.innerText === 'Admin');
         if (!exists) {
@@ -129,6 +130,7 @@
       } else {
         showPage("home");
       }
+
       loadSignals();
       loadProfile();
     }
@@ -176,11 +178,11 @@
         wallet: user.wallet - 1,
         unlockedSignals: firebase.firestore.FieldValue.arrayUnion(id)
       });
-      alert("Unlocked!");
+      alert("✅ Signal unlocked!");
       loadSignals();
       loadProfile();
     } else {
-      alert("Not enough EO Coins. Deposit first.");
+      alert("❌ Not enough EO Coins.");
     }
   }
 
