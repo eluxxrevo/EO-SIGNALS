@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>EO Signals</title>
+  <title>EO Signals - EO Coin App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -11,8 +11,8 @@
     body { margin: 0; font-family: sans-serif; background: #111; color: #fff; }
     .page { display: none; padding: 20px; }
     .active { display: block; }
-    .btn { background: gold; color: #000; padding: 10px; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; }
-    .signal-card { background: #222; padding: 10px; margin: 10px 0; border-left: 5px solid gold; border-radius: 5px; }
+    .btn { background: gold; color: #000; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+    .signal-card { background: #222; padding: 15px; margin: 10px 0; border-left: 5px solid gold; border-radius: 5px; }
     .locked { opacity: 0.5; }
     .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; justify-content: space-around; padding: 10px 0; border-top: 2px solid gold; }
     .nav a { color: gold; text-decoration: none; font-weight: bold; }
@@ -53,7 +53,6 @@
   <input id="tp" placeholder="Take Profit" />
   <input id="sl" placeholder="Stop Loss" />
   <button class="btn" onclick="postSignal()">Post Signal</button>
-
   <h3 style="margin-top:30px;">Transfer EO Coins</h3>
   <input id="targetEmail" placeholder="User Email" />
   <input id="coinAmount" type="number" placeholder="Amount to send" />
@@ -64,7 +63,9 @@
 <div class="nav">
   <a href="#" onclick="showPage('home')">Home</a>
   <a href="#" onclick="showPage('profile')">Profile</a>
+  <a href="#" id="adminTab" style="display:none" onclick="showPage('adminPanel')">Admin</a>
 </div>
+
 <script>
   setTimeout(() => document.getElementById("loader").style.display = "none", 3000);
 
@@ -79,7 +80,6 @@
   const auth = firebase.auth();
   const db = firebase.firestore();
   const adminEmail = "eluxxes@gmail.com";
-
   function showPage(id) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(id).classList.add('active');
@@ -115,24 +115,13 @@
         logout();
         return;
       }
-
       if (user.email === adminEmail) {
-        const exists = [...document.querySelectorAll(".nav a")].some(e => e.innerText === 'Admin');
-        if (!exists) {
-          const adminTab = document.createElement("a");
-          adminTab.innerText = "Admin";
-          adminTab.href = "#";
-          adminTab.onclick = () => showPage("adminPanel");
-          document.querySelector(".nav").appendChild(adminTab);
-        }
-        showPage("adminPanel");
+        document.getElementById("adminTab").style.display = "inline-block";
         loadAdminWallet();
-      } else {
-        showPage("home");
       }
-
       loadSignals();
       loadProfile();
+      showPage("home");
     }
   });
 
@@ -178,11 +167,11 @@
         wallet: user.wallet - 1,
         unlockedSignals: firebase.firestore.FieldValue.arrayUnion(id)
       });
-      alert("✅ Signal unlocked!");
+      alert("✅ Signal Unlocked!");
       loadSignals();
       loadProfile();
     } else {
-      alert("❌ Not enough EO Coins.");
+      alert("⚠️ Not enough EO Coins.");
     }
   }
 
@@ -192,12 +181,12 @@
     const entry = document.getElementById("entry").value;
     const tp = document.getElementById("tp").value;
     const sl = document.getElementById("sl").value;
-    const id = `${asset.toLowerCase().replace(/[^a-z0-9]/g, '')}_${Date.now()}`;
+    const id = `${asset.toLowerCase().replace(/[^a-z]/g, '')}_${Date.now()}`;
     await db.collection("signals").doc(id).set({
       id, asset, action, entry, tp, sl, duration: "3 minutes",
       date: new Date().toISOString().split("T")[0]
     });
-    alert("✅ Signal posted!");
+    alert("✅ Signal Posted!");
     loadSignals();
   }
 
