@@ -18,6 +18,8 @@
     .header { font-size: 24px; margin-bottom: 10px; color: gold; }
     input { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: none; }
     .loader { position: fixed; background: black; color: gold; font-size: 24px; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 9999; }
+    .section { margin-top: 20px; border-top: 1px solid #444; padding-top: 10px; }
+    ul { padding-left: 20px; }
   </style>
 </head>
 <body>
@@ -35,7 +37,10 @@
   <div class="header">👤 My Profile</div>
   <p><b>Email:</b> <span id="userEmail"></span></p>
   <p><b>EO Coins:</b> <span id="walletBalance">0</span> 🪙</p>
-  <button class="btn" onclick="logout()">Logout</button>
+  <a href="https://paystack.com/buy/eo-signals-zstlfg" target="_blank"><button class="btn">Deposit EO Coins</button></a>  <div class="section">
+    <div class="header">📜 Unlocked Signals</div>
+    <ul id="historyList"></ul>
+  </div>
 </div><div id="adminPanel" class="page">
   <div class="header">🛠️ Admin Panel</div>  <h3>Post Signal</h3>
   <input id="asset" placeholder="Asset (e.g., EUR/USD)" />
@@ -43,7 +48,7 @@
   <input id="entry" placeholder="Entry Price" />
   <input id="tp" placeholder="Take Profit" />
   <input id="sl" placeholder="Stop Loss" />
-  <button class="btn" onclick="postSignal()">Post Signal</button>  <h3 style="margin-top:30px;">Transfer EO Coins</h3>
+  <button class="btn" onclick="postSignal()">Post Signal</button>  <h3 class="section">Transfer EO Coins</h3>
   <input id="targetEmail" placeholder="User Email" />
   <input id="coinAmount" type="number" placeholder="Amount to send" />
   <button class="btn" onclick="transferCoins()">Send Coins</button>
@@ -79,14 +84,15 @@
         email,
         wallet: 0,
         unlockedSignals: []
-      });
+      }).then(() => login());
     }).catch(e => alert(e.message));
   }
 
   function login() {
     const email = document.getElementById('email').value;
     const pass = document.getElementById('password').value;
-    auth.signInWithEmailAndPassword(email, pass).catch(e => alert("Login failed: " + e.message));
+    auth.signInWithEmailAndPassword(email, pass).then(() => showPage('home'))
+    .catch(e => alert("Login failed: " + e.message));
   }
 
   function logout() {
@@ -117,104 +123,18 @@
 
   async function loadProfile() {
     const user = auth.currentUser;
-    const data = (await db.collection("users").doc(user.uid).get()).data();
+    const ref = db.collection("users").doc(user.uid);
+    const snap = await ref.get();
+    const data = snap.data();
     document.getElementById("userEmail").innerText = data.email;
     document.getElementById("walletBalance").innerText = data.wallet || 0;
-  }
-
-  let allSignals = [];
-
-  async function loadSignals() {
-    const snap = await db.collection("signals").get();
-    allSignals = snap.docs.map(d => d.data());
-    renderSignals(allSignals);
-  }
-
-  async function renderSignals(signals) {
-    const user = auth.currentUser;
-    const data = (await db.collection("users").doc(user.uid).get()).data();
-    const list = document.getElementById("signalsList");
-    list.innerHTML = "";
-    signals.forEach(sig => {
-      const hasAccess = data.unlockedSignals.includes(sig.id);
-      const div = document.createElement("div");
-      div.className = "signal-card" + (hasAccess ? "" : " locked");
-      div.innerHTML = `
-        <b>${sig.asset} – ${sig.action}</b><br>
-        Entry: ${sig.entry} | TP: ${sig.tp} | SL: ${sig.sl}<br>
-        Duration: ${sig.duration}<br>
-        ${!hasAccess ? `<button class='btn' onclick="unlockSignal('${sig.id}')">Unlock (1 EO)</button>` : ''}
-      `;
-      list.appendChild(div);
+    const historyList = document.getElementById("historyList");
+    historyList.innerHTML = "";
+    (data.unlockedSignals || []).forEach(id => {
+      const item = document.createElement("li");
+      item.textContent = id;
+      historyList.appendChild(item);
     });
-  }
-
-  function filterSignals() {
-    const q = document.getElementById("searchBar").value.toLowerCase();
-    const filtered = allSignals.filter(s => s.asset.toLowerCase().includes(q));
-    renderSignals(filtered);
-  }
-
-  async function unlockSignal(id) {
-    const uid = auth.currentUser.uid;
-    const ref = db.collection("users").doc(uid);
-    const snap = await ref.get();
-    const user = snap.data();
-    if ((user.wallet || 0) >= 1) {
-      await ref.update({
-        wallet: user.wallet - 1,
-        unlockedSignals: firebase.firestore.FieldValue.arrayUnion(id)
-      });
-      alert("Unlocked!");
-      loadSignals();
-      loadProfile();
-    } else {
-      alert("Not enough EO Coins. Deposit first.");
-    }
-  }
-
-  async function postSignal() {
-    const asset = document.getElementById("asset").value;
-    const action = document.getElementById("action").value;
-    const entry = document.getElementById("entry").value;
-    const tp = document.getElementById("tp").value;
-    const sl = document.getElementById("sl").value;
-    const id = `${asset.toLowerCase().replace(/[^a-z]/g, '')}_${Date.now()}`;
-    await db.collection("signals").doc(id).set({
-      id, asset, action, entry, tp, sl, duration: "3 minutes",
-      date: new Date().toISOString().split("T")[0]
-    });
-    alert("✅ Signal posted!");
-    loadSignals();
-  }
-
-  async function transferCoins() {
-    const email = document.getElementById("targetEmail").value;
-    const amount = parseInt(document.getElementById("coinAmount").value);
-    if (!email || !amount || amount <= 0) return alert("Invalid input.");
-    const snap = await db.collection("users").where("email", "==", email).get();
-    if (snap.empty) return alert("User not found.");
-    const userDoc = snap.docs[0];
-    const userId = userDoc.id;
-    const userData = userDoc.data();
-    const adminRef = db.collection("adminWallet").doc("eo");
-    const adminDoc = await adminRef.get();
-    let balance = adminDoc.exists ? adminDoc.data().balance : 60000000;
-    if (amount > balance) return alert("❌ Not enough admin coins.");
-    await adminRef.set({ balance: balance - amount });
-    await db.collection("users").doc(userId).update({
-      wallet: (userData.wallet || 0) + amount
-    });
-    alert(`✅ Sent ${amount} EO Coins to ${email}`);
-    loadAdminWallet();
-  }
-
-  async function loadAdminWallet() {
-    const ref = db.collection("adminWallet").doc("eo");
-    const doc = await ref.get();
-    const data = doc.exists ? doc.data() : { balance: 60000000 };
-    if (!doc.exists) await ref.set(data);
-    document.getElementById("adminBalance").innerText = data.balance;
   }
 </script></body>
 </html>
