@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>EO Signals - EO Coin App</title>
@@ -10,55 +11,118 @@
     body { margin: 0; font-family: sans-serif; background: #111; color: #fff; }
     .page { display: none; padding: 20px; }
     .active { display: block; }
-    .btn { background: gold; color: #000; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; }
-    .signal-card { background: #222; padding: 15px; margin: 10px 0; border-left: 5px solid gold; border-radius: 5px; }
+    .btn {
+      background: gold; color: #000;
+      padding: 10px 15px; border: none;
+      border-radius: 5px; cursor: pointer;
+      margin-top: 10px;
+    }
+    .signal-card {
+      background: #222;
+      padding: 15px;
+      margin: 10px 0;
+      border-left: 5px solid gold;
+      border-radius: 5px;
+    }
     .locked { opacity: 0.5; }
-    .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; justify-content: space-around; padding: 10px 0; border-top: 2px solid gold; }
+    .nav {
+      position: fixed; bottom: 0;
+      width: 100%;
+      display: flex;
+      background: #000;
+      justify-content: space-around;
+      padding: 10px 0;
+      border-top: 2px solid gold;
+    }
     .nav a { color: gold; text-decoration: none; font-weight: bold; }
     .header { font-size: 24px; margin-bottom: 10px; color: gold; }
-    input { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: none; }
-    .loader { position: fixed; background: black; color: gold; font-size: 24px; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 9999; }
-    .section { margin-top: 20px; border-top: 1px solid #444; padding-top: 10px; }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+      border: none;
+    }
+    .loader {
+      position: fixed;
+      background: black;
+      color: gold;
+      font-size: 24px;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .section {
+      margin-top: 20px;
+      border-top: 1px solid #444;
+      padding-top: 10px;
+    }
     ul { padding-left: 20px; }
   </style>
 </head>
 <body>
-<div id="loader" class="loader">Loading EO Signals...</div><div id="auth" class="page active">
+<div id="loader" class="loader">Loading EO Signals...</div>
+
+<!-- Auth Page -->
+<div id="auth" class="page active">
   <div class="header">Login / Register</div>
   <input id="email" placeholder="Email" type="email" />
   <input id="password" placeholder="Password" type="password" />
   <button class="btn" onclick="register()">Register</button>
   <button class="btn" onclick="login()">Login</button>
-</div><div id="home" class="page">
+</div>
+
+<!-- Home (Signals) -->
+<div id="home" class="page">
   <div class="header">📊 Signals</div>
-  <input id="searchBar" placeholder="Search asset" oninput="filterSignals()" />
   <div id="signalsList"></div>
-</div><div id="profile" class="page">
+</div>
+
+<!-- Profile Page -->
+<div id="profile" class="page">
   <div class="header">👤 My Profile</div>
   <p><b>Email:</b> <span id="userEmail"></span></p>
   <p><b>EO Coins:</b> <span id="walletBalance">0</span> 🪙</p>
-  <a href="https://paystack.com/buy/eo-signals-zstlfg" target="_blank"><button class="btn">Deposit EO Coins</button></a>  <div class="section">
+  <a href="https://paystack.com/buy/eo-signals-zstlfg" target="_blank"><button class="btn">Deposit EO Coins</button></a>
+  <div class="section">
     <div class="header">📜 Unlocked Signals</div>
     <ul id="historyList"></ul>
   </div>
-</div><div id="adminPanel" class="page">
-  <div class="header">🛠️ Admin Panel</div>  <h3>Post Signal</h3>
+  <button class="btn" onclick="logout()">Logout</button>
+</div>
+
+<!-- Admin Panel -->
+<div id="adminPanel" class="page">
+  <div class="header">🛠️ Admin Panel</div>
+  <h3>Post Signal</h3>
   <input id="asset" placeholder="Asset (e.g., EUR/USD)" />
   <input id="action" placeholder="Action (Buy/Sell)" />
   <input id="entry" placeholder="Entry Price" />
   <input id="tp" placeholder="Take Profit" />
   <input id="sl" placeholder="Stop Loss" />
-  <button class="btn" onclick="postSignal()">Post Signal</button>  <h3 class="section">Transfer EO Coins</h3>
+  <button class="btn" onclick="postSignal()">Post Signal</button>
+
+  <h3 class="section">Transfer EO Coins</h3>
   <input id="targetEmail" placeholder="User Email" />
   <input id="coinAmount" type="number" placeholder="Amount to send" />
   <button class="btn" onclick="transferCoins()">Send Coins</button>
   <p style="margin-top:10px;">Admin Wallet Balance: <span id="adminBalance">Loading...</span> 🪙</p>
-</div><div class="nav">
+</div>
+
+<!-- Navigation -->
+<div class="nav">
   <a href="#" onclick="showPage('home')">Home</a>
   <a href="#" onclick="showPage('profile')">Profile</a>
-</div><script>
+</div>
+
+<script>
+  // Loader for 3 seconds
   setTimeout(() => document.getElementById("loader").style.display = "none", 3000);
 
+  // Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyC_48KAtbyUk_658IKKPVVkdKF32F4xDHs",
     authDomain: "eo-signals.firebaseapp.com",
@@ -91,8 +155,7 @@
   function login() {
     const email = document.getElementById('email').value;
     const pass = document.getElementById('password').value;
-    auth.signInWithEmailAndPassword(email, pass).then(() => showPage('home'))
-    .catch(e => alert("Login failed: " + e.message));
+    auth.signInWithEmailAndPassword(email, pass).then(() => {}).catch(e => alert("Login failed: " + e.message));
   }
 
   function logout() {
@@ -115,9 +178,11 @@
         document.querySelector(".nav").appendChild(adminTab);
         loadAdminWallet();
       }
+      showPage("home");
       loadSignals();
       loadProfile();
-      showPage("home");
+    } else {
+      showPage("auth");
     }
   });
 
@@ -136,5 +201,122 @@
       historyList.appendChild(item);
     });
   }
-</script></body>
+</script>
+<script>
+  // EO Coin signal list (can be expanded via admin panel)
+  let allSignals = [
+    { id: 'eurusd', asset: 'EUR/USD', action: 'Buy', entry: '1.0950', tp: '1.1000', sl: '1.0920', duration: '3 minutes' },
+    { id: 'gbpusd', asset: 'GBP/USD', action: 'Sell', entry: '1.2650', tp: '1.2600', sl: '1.2680', duration: '3 minutes' },
+    { id: 'usdjpy', asset: 'USD/JPY', action: 'Buy', entry: '142.20', tp: '142.80', sl: '141.90', duration: '3 minutes' },
+    { id: 'audusd', asset: 'AUD/USD', action: 'Sell', entry: '0.6750', tp: '0.6700', sl: '0.6780', duration: '3 minutes' },
+    { id: 'facebook', asset: 'Facebook', action: 'Buy', entry: '315', tp: '320', sl: '312', duration: '3 minutes' },
+    { id: 'alibaba', asset: 'Alibaba', action: 'Sell', entry: '85', tp: '80', sl: '88', duration: '3 minutes' },
+    { id: 'apple', asset: 'Apple', action: 'Buy', entry: '180', tp: '185', sl: '178', duration: '3 minutes' },
+    { id: 'amazon', asset: 'Amazon', action: 'Buy', entry: '130', tp: '135', sl: '128', duration: '3 minutes' },
+    { id: 'btc', asset: 'BTC/USD', action: 'Buy', entry: '30000', tp: '30500', sl: '29800', duration: '3 minutes' },
+    { id: 'eth', asset: 'ETH/USD', action: 'Sell', entry: '1850', tp: '1800', sl: '1870', duration: '3 minutes' },
+    { id: 'gold', asset: 'Gold', action: 'Buy', entry: '1920', tp: '1950', sl: '1900', duration: '3 minutes' },
+    { id: 'oil', asset: 'Oil', action: 'Buy', entry: '70', tp: '72', sl: '69', duration: '3 minutes' },
+    { id: 'tesla', asset: 'Tesla', action: 'Sell', entry: '250', tp: '245', sl: '253', duration: '3 minutes' },
+    { id: 'snapchat', asset: 'Snapchat', action: 'Sell', entry: '12', tp: '11.5', sl: '12.2', duration: '3 minutes' },
+    { id: 'meta', asset: 'Meta', action: 'Buy', entry: '310', tp: '315', sl: '308', duration: '3 minutes' },
+    { id: 'google', asset: 'Google', action: 'Buy', entry: '135', tp: '140', sl: '133', duration: '3 minutes' },
+    { id: 'netflix', asset: 'Netflix', action: 'Sell', entry: '410', tp: '405', sl: '413', duration: '3 minutes' },
+    { id: 'paypal', asset: 'PayPal', action: 'Buy', entry: '65', tp: '67', sl: '64', duration: '3 minutes' },
+    { id: 'sp500', asset: 'S&P 500', action: 'Buy', entry: '4400', tp: '4425', sl: '4380', duration: '3 minutes' },
+    { id: 'nasdaq', asset: 'NASDAQ', action: 'Sell', entry: '13700', tp: '13650', sl: '13750', duration: '3 minutes' },
+    { id: 'dowjones', asset: 'Dow Jones', action: 'Buy', entry: '34000', tp: '34200', sl: '33900', duration: '3 minutes' },
+    { id: 'uber', asset: 'Uber', action: 'Buy', entry: '45', tp: '46', sl: '44.5', duration: '3 minutes' },
+    { id: 'zoom', asset: 'Zoom', action: 'Buy', entry: '70', tp: '72', sl: '69.5', duration: '3 minutes' },
+  ];
+
+  async function loadSignals() {
+    const snap = await db.collection("signals").get();
+    const dbSignals = snap.docs.map(d => d.data());
+    const all = [...allSignals, ...dbSignals];
+    renderSignals(all);
+  }
+
+  async function renderSignals(signals) {
+    const user = auth.currentUser;
+    const data = (await db.collection("users").doc(user.uid).get()).data();
+    const list = document.getElementById("signalsList");
+    list.innerHTML = "";
+    signals.forEach(sig => {
+      const hasAccess = (data.unlockedSignals || []).includes(sig.id);
+      const div = document.createElement("div");
+      div.className = "signal-card" + (hasAccess ? "" : " locked");
+      div.innerHTML = `
+        <b>${sig.asset} – ${sig.action}</b><br>
+        Entry: ${sig.entry} | TP: ${sig.tp} | SL: ${sig.sl}<br>
+        Duration: ${sig.duration}<br>
+        ${!hasAccess ? `<button class='btn' onclick="unlockSignal('${sig.id}')">Unlock (1 EO)</button>` : ''}
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  async function unlockSignal(id) {
+    const uid = auth.currentUser.uid;
+    const ref = db.collection("users").doc(uid);
+    const snap = await ref.get();
+    const user = snap.data();
+    if ((user.wallet || 0) >= 1) {
+      await ref.update({
+        wallet: user.wallet - 1,
+        unlockedSignals: firebase.firestore.FieldValue.arrayUnion(id)
+      });
+      alert("✅ Signal unlocked!");
+      loadSignals();
+      loadProfile();
+    } else {
+      alert("❌ Not enough EO Coins.");
+    }
+  }
+
+  async function postSignal() {
+    const asset = document.getElementById("asset").value;
+    const action = document.getElementById("action").value;
+    const entry = document.getElementById("entry").value;
+    const tp = document.getElementById("tp").value;
+    const sl = document.getElementById("sl").value;
+    const id = `${asset.toLowerCase().replace(/[^a-z]/g, '')}_${Date.now()}`;
+    await db.collection("signals").doc(id).set({
+      id, asset, action, entry, tp, sl, duration: "3 minutes",
+      date: new Date().toISOString().split("T")[0]
+    });
+    alert("✅ Signal posted!");
+    loadSignals();
+  }
+
+  async function transferCoins() {
+    const email = document.getElementById("targetEmail").value;
+    const amount = parseInt(document.getElementById("coinAmount").value);
+    if (!email || !amount || amount <= 0) return alert("❌ Invalid input.");
+    const snap = await db.collection("users").where("email", "==", email).get();
+    if (snap.empty) return alert("❌ User not found.");
+    const userDoc = snap.docs[0];
+    const userId = userDoc.id;
+    const userData = userDoc.data();
+    const adminRef = db.collection("adminWallet").doc("eo");
+    const adminDoc = await adminRef.get();
+    let balance = adminDoc.exists ? adminDoc.data().balance : 60000000;
+    if (amount > balance) return alert("❌ Admin doesn't have enough coins.");
+    await adminRef.set({ balance: balance - amount });
+    await db.collection("users").doc(userId).update({
+      wallet: (userData.wallet || 0) + amount
+    });
+    alert(`✅ Sent ${amount} EO Coins to ${email}`);
+    loadAdminWallet();
+  }
+
+  async function loadAdminWallet() {
+    const ref = db.collection("adminWallet").doc("eo");
+    const doc = await ref.get();
+    const data = doc.exists ? doc.data() : { balance: 60000000 };
+    if (!doc.exists) await ref.set(data);
+    document.getElementById("adminBalance").innerText = data.balance;
+  }
+</script>
+</body>
 </html>
